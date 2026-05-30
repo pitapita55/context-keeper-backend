@@ -1,6 +1,4 @@
-// VERSION: 2.0.0 - INJECTION FIX - DEPLOY THIS
-
-// server.js - Context Keeper Backend
+// server.js - Context Keeper Backend - FIXED
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -8,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// In-memory storage (replace with database later)
+// In-memory storage
 let teachings = [];
 
 // Health check
@@ -36,8 +34,7 @@ app.post('/api/memory', (req, res) => {
   
   teachings.push(teaching);
   
-  console.log(`📚 Stored teaching: ${teaching.lesson.substring(0, 50)}...`);
-  console.log(`📚 Total teachings: ${teachings.length}`);
+  console.log(`📚 Stored teaching. Total: ${teachings.length}`);
   
   res.json({ 
     message: 'Context Keeper API ready',
@@ -47,17 +44,11 @@ app.post('/api/memory', (req, res) => {
   });
 });
 
-// Inject memory into AI prompt - FIXED to return ALL teachings
+// Inject memory into AI prompt
 app.post('/api/memory/inject', (req, res) => {
-  const { user_message } = req.body;
+  console.log(`🔍 Injection requested. Total teachings in memory: ${teachings.length}`);
   
-  console.log(`🔍 Injection requested. Total teachings: ${teachings.length}`);
-  
-  // Return ALL teachings (no filtering)
-  const relevantTeachings = teachings;
-  
-  if (relevantTeachings.length === 0) {
-    console.log('❌ No teachings found');
+  if (teachings.length === 0) {
     return res.json({ 
       context_prompt: '', 
       teachings_applied: [],
@@ -65,41 +56,19 @@ app.post('/api/memory/inject', (req, res) => {
     });
   }
   
-  // Build context prompt from all teachings
-  const context_prompt = `REMEMBER FROM PREVIOUS TEACHINGS:\n\n${relevantTeachings.map(t => `- ${t.lesson}`).join('\n')}\n\nDo not violate these lessons.`;
+  const context_prompt = `REMEMBER FROM PREVIOUS TEACHINGS:\n\n${teachings.map(t => `- ${t.lesson}`).join('\n')}\n\nDo not violate these lessons.`;
   
-  console.log(`✅ Returning ${relevantTeachings.length} teachings`);
+  console.log(`✅ Returning ${teachings.length} teachings`);
   
   res.json({
     context_prompt,
-    teachings_applied: relevantTeachings,
-    count: relevantTeachings.length,
-    message: `Found ${relevantTeachings.length} memories`
+    teachings_applied: teachings,
+    count: teachings.length,
+    message: `Found ${teachings.length} memories`
   });
-});
-
-// Delete a teaching (optional)
-app.delete('/api/memory/:id', (req, res) => {
-  const { id } = req.params;
-  const index = teachings.findIndex(t => t.id === id);
-  
-  if (index === -1) {
-    return res.status(404).json({ error: 'Teaching not found' });
-  }
-  
-  teachings.splice(index, 1);
-  res.json({ message: 'Teaching deleted', total_teachings: teachings.length });
-});
-
-// Clear all teachings (admin only - for testing)
-app.delete('/api/memory', (req, res) => {
-  teachings = [];
-  res.json({ message: 'All teachings cleared', total_teachings: 0 });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🧠 Context Keeper API running on port ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/health`);
-  console.log(`📍 Memory endpoint: http://localhost:${PORT}/api/memory`);
 });
