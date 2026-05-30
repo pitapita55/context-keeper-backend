@@ -1,3 +1,5 @@
+// VERSION: 2.0.0 - INJECTION FIX - DEPLOY THIS
+
 // server.js - Context Keeper Backend
 const express = require('express');
 const cors = require('cors');
